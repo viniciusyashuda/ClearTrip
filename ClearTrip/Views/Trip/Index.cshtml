@@ -1,0 +1,99 @@
+@model ClearTrip.Models.TripViewModel
+
+@{
+    ViewData["Title"] = "ClearTrip AI - Planejamento Inteligente com Clima Real";
+    var minDate = DateTime.Today.ToString("yyyy-MM-dd");
+    var maxDate = DateTime.Today.AddDays(7).ToString("yyyy-MM-dd");
+}
+
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <h1 class="display-6 fw-bold">ClearTrip AI</h1>
+        <p class="text-muted">Roteiros e checklist de mala adaptados ao clima real via Gemini Function Calling.</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3">Sua Viagem</h5>
+                    <form asp-action="Plan" method="post" id="formTrip">
+                        <div class="mb-3">
+                            <label asp-for="Destination" class="form-label"></label>
+                            <input asp-for="Destination" class="form-control" placeholder="Ex: Gramado, Curitiba, Salvador" />
+                            <span asp-validation-for="Destination" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="StartDate" class="form-label"></label>
+                            <input asp-for="StartDate" type="date" class="form-control" min="@minDate" max="@maxDate" />
+                            <span asp-validation-for="StartDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="EndDate" class="form-label"></label>
+                            <input asp-for="EndDate" type="date" class="form-control" min="@minDate" max="@maxDate" />
+                            <span asp-validation-for="EndDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="TravelStyle" class="form-label"></label>
+                            <select asp-for="TravelStyle" class="form-select">
+                                <option value="Cultural e Gastronomico">Cultural e Gastronomico</option>
+                                <option value="Aventura e Ecoturismo">Aventura e Ecoturismo</option>
+                                <option value="Familiar com Criancas">Familiar com Criancas</option>
+                                <option value="Economico / Mochilao">Economico / Mochilao</option>
+                                <option value="Romantico / Casal">Romantico / Casal</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" id="btnSubmit">
+                            <span id="btnText">Gerar Roteiro ClearTrip</span>
+                            <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3">Roteiro e Mala Sugerida</h5>
+
+                    @if (!string.IsNullOrEmpty(Model.GeneratedItinerary))
+                    {
+                        <div class="bg-light p-3 rounded" style="white-space: pre-line;">
+                            @Model.GeneratedItinerary
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <p class="mb-0">Preencha o formulario ao lado e clique em Gerar Roteiro ClearTrip.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('formTrip').addEventListener('submit', function () {
+        var btn = document.getElementById('btnSubmit');
+        var text = document.getElementById('btnText');
+        var spinner = document.getElementById('btnSpinner');
+        btn.disabled = true;
+        text.innerText = 'Consultando clima e gerando...';
+        spinner.classList.remove('d-none');
+        this.submit();
+    });
+</script>
