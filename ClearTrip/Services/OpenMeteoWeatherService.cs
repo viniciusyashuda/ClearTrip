@@ -13,12 +13,6 @@ public class OpenMeteoWeatherService : IWeatherService
         _httpClient = httpClient;
     }
 
-    public Task<string> GetForecastAsync(string city, int days)
-    {
-        var start = DateOnly.FromDateTime(DateTime.Today);
-        var end = start.AddDays(Math.Max(1, days) - 1);
-        return GetForecastAsync(city, start, end);
-    }
 
     public async Task<string> GetForecastAsync(string city, DateOnly startDate, DateOnly endDate)
     {

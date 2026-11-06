@@ -17,7 +17,7 @@ public class GeminiService : IGeminiService
         _httpClient = httpClient;
         _weatherService = weatherService;
         _apiKey = overrideApiKey ?? ResolveApiKey(configuration);
-        _model = configuration["Gemini:Model"] ?? configuration["GeminiModel"] ?? "gemini-3.8-flash";
+        _model = configuration["Gemini:Model"] ?? configuration["GeminiModel"] ?? "gemini-flash-lite-latest";
         _endpointUrl = configuration["Gemini:EndpointUrl"] ?? "https://generativelanguage.googleapis.com/v1beta/models";
     }
 
@@ -26,25 +26,18 @@ public class GeminiService : IGeminiService
         var envKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
             ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY", EnvironmentVariableTarget.User);
 
-        if (!string.IsNullOrWhiteSpace(envKey) && !envKey.Contains("YOUR_GEMINI_API_KEY", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(envKey))
         {
             return envKey.Trim();
         }
 
         var configKey = configuration["Gemini:ApiKey"] ?? configuration["GeminiApiKey"];
-        if (!string.IsNullOrWhiteSpace(configKey) && !configKey.Contains("YOUR_GEMINI_API_KEY", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(configKey))
         {
             return configKey.Trim();
         }
 
         return string.Empty;
-    }
-
-    public Task<string> GenerateTripPlanAsync(string destination, int days, string travelStyle)
-    {
-        var start = DateOnly.FromDateTime(DateTime.Today);
-        var end = start.AddDays(Math.Max(1, days) - 1);
-        return GenerateTripPlanAsync(destination, start, end, travelStyle);
     }
 
     public async Task<string> GenerateTripPlanAsync(string destination, DateOnly startDate, DateOnly endDate, string travelStyle)

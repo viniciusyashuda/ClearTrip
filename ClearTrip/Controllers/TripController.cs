@@ -34,7 +34,8 @@ public class TripController : Controller
                 model.Destination,
                 model.StartDate,
                 model.EndDate,
-                model.TravelStyle);
+                model.TravelStyle
+            );
         }
         catch (Exception ex)
         {
