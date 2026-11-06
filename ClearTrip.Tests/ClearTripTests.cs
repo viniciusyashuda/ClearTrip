@@ -9,12 +9,14 @@ namespace ClearTrip.Tests;
 public class WeatherServiceTests
 {
     [Fact]
-    public async Task GetForecastAsync_WithValidCityAndDays_ReturnsWeatherForecast()
+    public async Task GetForecastAsync_WithValidCityAndDateRange_ReturnsWeatherForecast()
     {
         using var httpClient = new HttpClient();
         var service = new OpenMeteoWeatherService(httpClient);
+        var start = DateOnly.FromDateTime(DateTime.Today);
+        var end = start.AddDays(2);
 
-        var result = await service.GetForecastAsync("Curitiba", 3);
+        var result = await service.GetForecastAsync("Curitiba", start, end);
 
         Assert.NotNull(result);
         Assert.Contains("Date:", result);
@@ -41,8 +43,10 @@ public class WeatherServiceTests
     {
         using var httpClient = new HttpClient();
         var service = new OpenMeteoWeatherService(httpClient);
+        var start = DateOnly.FromDateTime(DateTime.Today);
+        var end = start.AddDays(2);
 
-        var result = await service.GetForecastAsync("InvalidCityNameXYZ999Unknown", 2);
+        var result = await service.GetForecastAsync("InvalidCityNameXYZ999Unknown", start, end);
 
         Assert.NotNull(result);
         Assert.Contains("not found", result);
@@ -158,7 +162,6 @@ public class GeminiServiceTests
     {
         var inMemoryConfig = new Dictionary<string, string?>
         {
-            ["GeminiApiKey"] = "YOUR_GEMINI_API_KEY",
             ["Gemini:ApiKey"] = "YOUR_GEMINI_API_KEY"
         };
 
@@ -170,9 +173,53 @@ public class GeminiServiceTests
         var weatherService = new OpenMeteoWeatherService(httpClient);
         var geminiService = new GeminiService(httpClient, weatherService, configuration, overrideApiKey: "");
 
-        var result = await geminiService.GenerateTripPlanAsync("Gramado", 3, "Cultural e Gastronomico");
+        var start = DateOnly.FromDateTime(DateTime.Today);
+        var end = start.AddDays(2);
+        var result = await geminiService.GenerateTripPlanAsync("Gramado", start, end, "Cultural e Gastronomico");
 
         Assert.Contains("Chave de API do Gemini nao configurada", result);
+    }
+
+    [Fact]
+    public async Task GenerateTripPlanAsync_HappyPath_ReturnsGeneratedItinerary()
+    {
+        var configuration = new ConfigurationBuilder().Build();
+        var apiKey = GeminiService.ResolveApiKey(configuration);
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            var mockHandler = new MockHttpMessageHandler(request =>
+            {
+                var responseJson = "{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Dia 1: Chegada em Gramado e passeio pelo centro.\\nDia 2: Lago Negro e gastronomia local.\\nChecklist de mala: Roupas confortaveis.\"}]}}]}";
+                return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+                {
+                    Content = new StringContent(responseJson, System.Text.Encoding.UTF8, "application/json")
+                };
+            });
+            using var mockClient = new HttpClient(mockHandler);
+            var mockWeather = new OpenMeteoWeatherService(mockClient);
+            var mockService = new GeminiService(mockClient, mockWeather, configuration, overrideApiKey: "test-api-key");
+
+            var startMock = DateOnly.FromDateTime(DateTime.Today);
+            var endMock = startMock.AddDays(2);
+            var mockResult = await mockService.GenerateTripPlanAsync("Gramado", startMock, endMock, "Cultural e Gastronomico");
+
+            Assert.NotNull(mockResult);
+            Assert.Contains("Gramado", mockResult);
+            return;
+        }
+
+        using var httpClient = new HttpClient();
+        var weatherService = new OpenMeteoWeatherService(httpClient);
+        var geminiService = new GeminiService(httpClient, weatherService, configuration);
+        var start = DateOnly.FromDateTime(DateTime.Today);
+        var end = start.AddDays(2);
+
+        var result = await geminiService.GenerateTripPlanAsync("Gramado", start, end, "Cultural e Gastronomico");
+
+        Assert.NotNull(result);
+        Assert.False(string.IsNullOrWhiteSpace(result));
+        Assert.DoesNotContain("Chave de API do Gemini nao configurada", result);
     }
 
     [Fact]
@@ -249,5 +296,20 @@ public class GeminiServiceTests
 
         Assert.Equal(fallbackStart, start);
         Assert.Equal(fallbackEnd, end);
+    }
+}
+
+internal class MockHttpMessageHandler : HttpMessageHandler
+{
+    private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
+
+    public MockHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)
+    {
+        _handler = handler;
+    }
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(_handler(request));
     }
 }
