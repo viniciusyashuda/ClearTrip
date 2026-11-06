@@ -2,8 +2,8 @@
 
 @{
     ViewData["Title"] = "ClearTrip AI - Planejamento Inteligente com Clima Real";
-    var minDate = DateTime.Today.ToString("yyyy-MM-dd");
-    var maxDate = DateTime.Today.AddDays(7).ToString("yyyy-MM-dd");
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var maxForecastDate = today.AddDays(7);
 }
 
 <div class="container py-4">
@@ -33,13 +33,35 @@
 
                         <div class="mb-3">
                             <label asp-for="StartDate" class="form-label"></label>
-                            <input asp-for="StartDate" type="date" class="form-control" min="@minDate" max="@maxDate" />
+                            <select asp-for="StartDate" class="form-select" id="selectStartDate">
+                                @for (int i = 0; i < 7; i++)
+                                {
+                                    var date = today.AddDays(i);
+                                    var isSelected = date == Model.StartDate;
+                                    <option value="@date.ToString("yyyy-MM-dd")" selected="@(isSelected ? "selected" : null)">
+                                        @date.ToString("dd/MM/yyyy")
+                                    </option>
+                                }
+                            </select>
                             <span asp-validation-for="StartDate" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="EndDate" class="form-label"></label>
-                            <input asp-for="EndDate" type="date" class="form-control" min="@minDate" max="@maxDate" />
+                            <select asp-for="EndDate" class="form-select" id="selectEndDate">
+                                @{
+                                    var initialStart = Model.StartDate >= today ? Model.StartDate : today;
+                                    for (int i = 1; i <= 6; i++)
+                                    {
+                                        var date = initialStart.AddDays(i);
+                                        if (date > maxForecastDate) break;
+                                        var isSelected = date == Model.EndDate;
+                                        <option value="@date.ToString("yyyy-MM-dd")" selected="@(isSelected ? "selected" : null)">
+                                            @date.ToString("dd/MM/yyyy")
+                                        </option>
+                                    }
+                                }
+                            </select>
                             <span asp-validation-for="EndDate" class="text-danger small"></span>
                         </div>
 
@@ -87,13 +109,86 @@
 </div>
 
 <script>
-    document.getElementById('formTrip').addEventListener('submit', function () {
+    var startSelect = document.getElementById('selectStartDate');
+    var endSelect = document.getElementById('selectEndDate');
+    var formTrip = document.getElementById('formTrip');
+
+    function parseIsoDate(str) {
+        var parts = str.split('-');
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+
+    function formatIsoDate(d) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+    }
+
+    function formatBrDate(d) {
+        var day = String(d.getDate()).padStart(2, '0');
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var y = d.getFullYear();
+        return day + '/' + m + '/' + y;
+    }
+
+    function updateEndDateOptions() {
+        var startVal = startSelect.value;
+        if (!startVal) return;
+
+        var startDate = parseIsoDate(startVal);
+        var currentEndVal = endSelect.value;
+        var maxForecast = parseIsoDate('@maxForecastDate.ToString("yyyy-MM-dd")');
+
+        var validOptions = [];
+        for (var i = 1; i <= 6; i++) {
+            var candidate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+            if (candidate > maxForecast) {
+                break;
+            }
+            validOptions.push(candidate);
+        }
+
+        if (validOptions.length === 0) {
+            var fallback = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 1);
+            validOptions.push(fallback);
+        }
+
+        var isCurrentStillValid = validOptions.some(function (d) {
+            return formatIsoDate(d) === currentEndVal;
+        });
+
+        var targetValue = isCurrentStillValid ? currentEndVal : null;
+        if (!targetValue) {
+            var defaultCandidate = validOptions.length > 1 ? validOptions[1] : validOptions[0];
+            targetValue = formatIsoDate(defaultCandidate);
+        }
+
+        endSelect.innerHTML = '';
+        validOptions.forEach(function (d) {
+            var iso = formatIsoDate(d);
+            var br = formatBrDate(d);
+            var opt = document.createElement('option');
+            opt.value = iso;
+            opt.textContent = br;
+            if (iso === targetValue) {
+                opt.selected = true;
+            }
+            endSelect.appendChild(opt);
+        });
+    }
+
+    startSelect.addEventListener('change', updateEndDateOptions);
+
+    formTrip.addEventListener('submit', function (e) {
+        if (!formTrip.checkValidity()) {
+            return;
+        }
         var btn = document.getElementById('btnSubmit');
         var text = document.getElementById('btnText');
         var spinner = document.getElementById('btnSpinner');
         btn.disabled = true;
         text.innerText = 'Consultando clima e gerando...';
         spinner.classList.remove('d-none');
-        this.submit();
     });
 </script>

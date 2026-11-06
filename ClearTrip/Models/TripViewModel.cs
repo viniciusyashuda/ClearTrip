@@ -39,9 +39,9 @@ public class TripViewModel : IValidatableObject
             yield return new ValidationResult("A data de inicio nao pode ser anterior a hoje.", [nameof(StartDate)]);
         }
 
-        if (EndDate < StartDate)
+        if (EndDate <= StartDate)
         {
-            yield return new ValidationResult("A data de termino deve ser igual ou posterior a data de inicio.", [nameof(EndDate)]);
+            yield return new ValidationResult("A data de termino deve ser posterior a data de inicio.", [nameof(EndDate)]);
         }
 
         if (EndDate > maxAllowedDate)
@@ -49,9 +49,9 @@ public class TripViewModel : IValidatableObject
             yield return new ValidationResult("A previsao do tempo esta limitada a no maximo 7 dias a partir de hoje.", [nameof(EndDate)]);
         }
 
-        if (Days is < 1 or > 7)
+        if (Days > 7)
         {
-            yield return new ValidationResult("O periodo da viagem deve ser de 1 a 7 dias.", [nameof(EndDate)]);
+            yield return new ValidationResult("O periodo da viagem deve ser de no maximo 7 dias.", [nameof(EndDate)]);
         }
     }
 }

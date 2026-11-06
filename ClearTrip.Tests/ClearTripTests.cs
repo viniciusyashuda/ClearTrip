@@ -113,6 +113,21 @@ public class TripViewModelValidationTests
     }
 
     [Fact]
+    public void TripViewModel_WithSameStartAndEndDate_FailsValidation()
+    {
+        var model = new TripViewModel
+        {
+            Destination = "Florianopolis",
+            StartDate = DateOnly.FromDateTime(DateTime.Today),
+            EndDate = DateOnly.FromDateTime(DateTime.Today)
+        };
+
+        var validationResults = ValidateModel(model);
+
+        Assert.Contains(validationResults, v => v.MemberNames.Contains("EndDate"));
+    }
+
+    [Fact]
     public void TripViewModel_WithDateRangeExceeding7Days_FailsValidation()
     {
         var model = new TripViewModel
