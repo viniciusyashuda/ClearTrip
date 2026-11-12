@@ -44,7 +44,7 @@ public class GeminiService : IGeminiService
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
         {
-            return "Chave de API do Gemini nao configurada. Configure a chave no arquivo appsettings.json ou defina a variavel de ambiente GEMINI_API_KEY.";
+            return "Gemini API key is not configured. Configure the key in appsettings.json or set the GEMINI_API_KEY environment variable.";
         }
 
         var candidateModels = GetCandidateModels();
@@ -65,7 +65,7 @@ public class GeminiService : IGeminiService
             }
         }
 
-        return lastError ?? "Nao foi possivel obter resposta do assistente.";
+        return lastError ?? "Unable to obtain response from assistant.";
     }
 
     private async Task<(bool Success, string Text)> TryGenerateWithModelAsync(string model, string destination, DateOnly startDate, DateOnly endDate, string travelStyle)
@@ -278,7 +278,7 @@ public class GeminiService : IGeminiService
         var errorMessage = response?["error"]?["message"]?.ToString();
         if (!string.IsNullOrEmpty(errorMessage))
         {
-            return $"Erro da API Gemini: {errorMessage}";
+            return $"Gemini API error: {errorMessage}";
         }
         return null;
     }
@@ -304,7 +304,7 @@ public class GeminiService : IGeminiService
         var parts = response?["candidates"]?[0]?["content"]?["parts"]?.AsArray();
         if (parts == null || parts.Count == 0)
         {
-            return "Nao foi possivel obter resposta do assistente.";
+            return "Unable to obtain response from assistant.";
         }
 
         var sb = new StringBuilder();

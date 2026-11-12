@@ -177,7 +177,7 @@ public class GeminiServiceTests
         var end = start.AddDays(2);
         var result = await geminiService.GenerateTripPlanAsync("Gramado", start, end, "Cultural e Gastronomico");
 
-        Assert.Contains("Chave de API do Gemini nao configurada", result);
+        Assert.Contains("Gemini API key is not configured", result);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public class GeminiServiceTests
 
         Assert.NotNull(result);
         Assert.False(string.IsNullOrWhiteSpace(result));
-        Assert.DoesNotContain("Chave de API do Gemini nao configurada", result);
+        Assert.DoesNotContain("Gemini API key is not configured", result);
     }
 
     [Fact]
