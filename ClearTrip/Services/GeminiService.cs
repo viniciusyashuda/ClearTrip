@@ -17,7 +17,7 @@ public class GeminiService : IGeminiService
         _httpClient = httpClient;
         _weatherService = weatherService;
         _apiKey = overrideApiKey ?? ResolveApiKey(configuration);
-        _model = configuration["Gemini:Model"] ?? configuration["GeminiModel"] ?? "gemini-flash-lite-latest";
+        _model = configuration["Gemini:Model"] ?? "gemini-flash-3.8";
         _endpointUrl = configuration["Gemini:EndpointUrl"] ?? "https://generativelanguage.googleapis.com/v1beta/models";
     }
 
@@ -31,7 +31,7 @@ public class GeminiService : IGeminiService
             return envKey.Trim();
         }
 
-        var configKey = configuration["Gemini:ApiKey"] ?? configuration["GeminiApiKey"];
+        var configKey = configuration["Gemini:ApiKey"];
         if (!string.IsNullOrWhiteSpace(configKey))
         {
             return configKey.Trim();
